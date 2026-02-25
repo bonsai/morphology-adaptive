@@ -193,9 +193,17 @@ async function loadCreatureMesh(type) {
         }
 
         // Replace current player morph with complex one
-        if (playerMorph) {
-            scene.remove(playerMorph);
-            createComplexCreature(creatureMeshData);
+        if (playerMorph1) {
+            scene.remove(playerMorph1);
+            playerMorph1 = createComplexCreature(creatureMeshData);
+            playerMorph1.position.set(-10, 1, 2);
+            scene.add(playerMorph1);
+        }
+        if (playerMorph2) {
+            scene.remove(playerMorph2);
+            playerMorph2 = createComplexCreature(creatureMeshData);
+            playerMorph2.position.set(-10, 1, -2);
+            scene.add(playerMorph2);
         }
     } catch (e) {
         console.error(`Failed to load mesh for ${type}:`, e);
@@ -282,8 +290,7 @@ function createComplexCreature(data) {
     group.position.set(10, 1, 0);
     // Scale down and center
     group.scale.set(0.5, 0.5, 0.5);
-    scene.add(group);
-    playerMorph = group;
+    return group;
 }
 
 function setupEventListeners() {
