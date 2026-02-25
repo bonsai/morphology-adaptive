@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::*;
+use crate::components::creature::{Creature, Morphology};
 
 #[wasm_bindgen]
 pub struct GameState {
@@ -15,10 +16,12 @@ pub struct GameState {
     pub race_completed: bool,
     pub start_time: f64,
     pub current_time: f64,
+    #[allow(dead_code)]
+    pub(crate) creature: Creature,
 }
 
 impl GameState {
-    pub fn new(total_laps: i32) -> Self {
+    pub fn new(total_laps: i32, morphology: Morphology) -> Self {
         Self {
             x: 10.0,
             y: 1.0,
@@ -33,6 +36,7 @@ impl GameState {
             race_completed: false,
             start_time: 0.0,
             current_time: 0.0,
+            creature: Creature::new(morphology),
         }
     }
 }

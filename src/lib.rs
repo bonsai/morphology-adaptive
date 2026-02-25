@@ -4,12 +4,19 @@ use wasm_bindgen::prelude::*;
 pub use crate::components::state::GameState;
 use crate::components::physics::PhysicsEngine;
 use crate::components::rules::RaceRules;
+use crate::components::creature::Morphology;
 
 #[wasm_bindgen]
 impl GameState {
     #[wasm_bindgen(constructor)]
-    pub fn new_wasm(total_laps: i32) -> GameState {
-        GameState::new(total_laps)
+    pub fn new_wasm(total_laps: i32, morphology: u8) -> GameState {
+        let morph = match morphology {
+            0 => Morphology::Biped,
+            1 => Morphology::Quadruped,
+            2 => Morphology::Hexapod,
+            _ => Morphology::Biped,
+        };
+        GameState::new(total_laps, morph)
     }
 
     pub fn start_race(&mut self, now: f64) {

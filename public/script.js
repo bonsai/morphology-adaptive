@@ -25,7 +25,8 @@ function init() {
         isPythonBackend = true;
     } else if (window.GameState) {
         console.log("Using Rust (WASM) backend");
-        gameLogic = new window.GameState(uiState.totalLaps);
+        const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
+        gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
         isPythonBackend = false;
     } else {
         console.error("No GameState backend (Rust or Python) loaded");
@@ -161,7 +162,8 @@ function restartGame() {
     if (isPythonBackend) {
         gameLogic = window.GameState(uiState.totalLaps);
     } else {
-        gameLogic = new window.GameState(uiState.totalLaps);
+        const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
+        gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
     }
     playerMorph.position.set(10, 1, 0);
     playerMorph.rotation.set(0, 0, 0);

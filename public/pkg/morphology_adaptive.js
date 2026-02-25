@@ -69,9 +69,10 @@ export class GameState {
     }
     /**
      * @param {number} total_laps
+     * @param {number} morphology
      */
-    constructor(total_laps) {
-        const ret = wasm.gamestate_new(total_laps);
+    constructor(total_laps, morphology) {
+        const ret = wasm.gamestate_new_wasm(total_laps, morphology);
         this.__wbg_ptr = ret >>> 0;
         GameStateFinalization.register(this, this.__wbg_ptr, this);
         return this;
@@ -92,8 +93,186 @@ export class GameState {
         const len0 = WASM_VECTOR_LEN;
         wasm.gamestate_update(this.__wbg_ptr, delta, now, ptr0, len0);
     }
+    /**
+     * @returns {number}
+     */
+    get current_time() {
+        const ret = wasm.__wbg_get_gamestate_current_time(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get lap() {
+        const ret = wasm.__wbg_get_gamestate_lap(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get last_angle() {
+        const ret = wasm.__wbg_get_gamestate_last_angle(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get race_completed() {
+        const ret = wasm.__wbg_get_gamestate_race_completed(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get race_started() {
+        const ret = wasm.__wbg_get_gamestate_race_started(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {number}
+     */
+    get rotation_y() {
+        const ret = wasm.__wbg_get_gamestate_rotation_y(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get speed() {
+        const ret = wasm.__wbg_get_gamestate_speed(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get start_time() {
+        const ret = wasm.__wbg_get_gamestate_start_time(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get total_angle() {
+        const ret = wasm.__wbg_get_gamestate_total_angle(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get total_laps() {
+        const ret = wasm.__wbg_get_gamestate_total_laps(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get x() {
+        const ret = wasm.__wbg_get_gamestate_x(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get y() {
+        const ret = wasm.__wbg_get_gamestate_y(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get z() {
+        const ret = wasm.__wbg_get_gamestate_z(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set current_time(arg0) {
+        wasm.__wbg_set_gamestate_current_time(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set lap(arg0) {
+        wasm.__wbg_set_gamestate_lap(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set last_angle(arg0) {
+        wasm.__wbg_set_gamestate_last_angle(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {boolean} arg0
+     */
+    set race_completed(arg0) {
+        wasm.__wbg_set_gamestate_race_completed(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {boolean} arg0
+     */
+    set race_started(arg0) {
+        wasm.__wbg_set_gamestate_race_started(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set rotation_y(arg0) {
+        wasm.__wbg_set_gamestate_rotation_y(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set speed(arg0) {
+        wasm.__wbg_set_gamestate_speed(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set start_time(arg0) {
+        wasm.__wbg_set_gamestate_start_time(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set total_angle(arg0) {
+        wasm.__wbg_set_gamestate_total_angle(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set total_laps(arg0) {
+        wasm.__wbg_set_gamestate_total_laps(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set x(arg0) {
+        wasm.__wbg_set_gamestate_x(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set y(arg0) {
+        wasm.__wbg_set_gamestate_y(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set z(arg0) {
+        wasm.__wbg_set_gamestate_z(this.__wbg_ptr, arg0);
+    }
 }
 if (Symbol.dispose) GameState.prototype[Symbol.dispose] = GameState.prototype.free;
+
+/**
+ * @enum {0 | 1 | 2}
+ */
+export const Morphology = Object.freeze({
+    Biped: 0, "0": "Biped",
+    Quadruped: 1, "1": "Quadruped",
+    Hexapod: 2, "2": "Hexapod",
+});
 
 function __wbg_get_imports() {
     const import0 = {
