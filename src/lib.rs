@@ -384,9 +384,9 @@ impl GameWorld {
         }
 
         let positions = self.creatures[idx].get_limb_positions();
-        let js_positions: Vec<Vec<f32>> = positions
+        let js_positions: Vec<f32> = positions
             .into_iter()
-            .flat_map(|(pos, rot)| vec![pos.x, pos.y, pos.z, rot.x, rot.y, rot.z])
+            .flat_map(|(pos, rot)| [pos.x, pos.y, pos.z, rot.x, rot.y, rot.z])
             .collect();
         
         JsValue::from_serde(&js_positions).unwrap_or(JsValue::NULL)
