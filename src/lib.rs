@@ -12,7 +12,7 @@ use console_error_panic_hook;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 // Morphology types supported in the game
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Morphology {
     Biped,
     Quadruped,
