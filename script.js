@@ -97,28 +97,21 @@ function init() {
 }
 
 function createTrack() {
-    // Create a circular track using a torus knot as the base path
-    const trackGeometry = new THREE.TorusKnotGeometry(10, 0.5, 128, 32, 2, 3);
-    const trackMaterial = new THREE.MeshPhongMaterial({ color: 0x303030, wireframe: false });
-    track = new THREE.Mesh(trackGeometry, trackMaterial);
-    scene.add(track);
+    // Create a long flat road instead of floating blocks
+    const roadGeometry = new THREE.PlaneGeometry(200, 20);
+    const roadMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+    const road = new THREE.Mesh(roadGeometry, roadMaterial);
+    road.rotation.x = -Math.PI / 2;
+    road.position.y = -0.05; // Slightly below ground level
+    scene.add(road);
 
-    // Add some terrain blocks to represent different terrains
-    for (let i = 0; i < 10; i++) {
-        const angle = (i / 10) * Math.PI * 2;
-        const radius = 10;
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
-        
-        const geometry = new THREE.BoxGeometry(2, 0.5, 2);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: i % 2 === 0 ? 0x8B4513 : 0x228B22 // Alternating dirt and grass
-        });
-        const block = new THREE.Mesh(geometry, material);
-        block.position.set(x, -0.5, z);
-        scene.add(block);
-        terrainBlocks.push(block);
-    }
+    // Add track markings
+    const lineGeom = new THREE.PlaneGeometry(200, 0.2);
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const line = new THREE.Mesh(lineGeom, lineMat);
+    line.rotation.x = -Math.PI / 2;
+    line.position.y = 0;
+    scene.add(line);
 }
 
 function createPlayerMorph() {
@@ -168,9 +161,16 @@ async function loadCreatureMesh(type) {
     const path = `data/agents/${type.toLowerCase()}/mesh.json`;
     try {
         const response = await fetch(path);
-        creatureMeshData = await response.json();
+        const meshJsonText = await response.text();
+        creatureMeshData = JSON.parse(meshJsonText);
         console.log(`Loaded mesh for ${type}`);
         
+        // Initialize Rust simulation with this mesh
+        if (gameLogic && !isPythonBackend) {
+            gameLogic.init_simulation(meshJsonText);
+            console.log("Rust SoftBody simulation initialized");
+        }
+
         // Replace current player morph with complex one
         if (playerMorph) {
             scene.remove(playerMorph);
@@ -321,39 +321,40 @@ function updateGameState() {
     const activeKeys = Object.keys(keys).filter(k => keys[k]);
     
     gameLogic.update(delta, Date.now(), activeKeys);
-    
-    // Procedural animation for the creature nodes
-    if (creatureMeshData && nodeMeshes.length > 0) {
-        const time = Date.now() * 0.005;
-        const speed = gameLogic.get_speed();
-        
-        nodeMeshes.forEach((node, i) => {
-            const originalPos = creatureMeshData.pos[i];
-            // Add some wobble based on speed and time
-            const wobble = Math.sin(time + originalPos[0] * 5) * 0.1 * (speed / 15.0);
-            node.position.y = originalPos[1] + wobble;
-        });
 
-        // Update edges and body mesh
-        const mesh = playerMorph.children[0];
-        const positions = mesh.geometry.attributes.position.array;
-        
-        nodeMeshes.forEach((node, i) => {
-            positions[i * 3 + 1] = node.position.y;
-        });
-        mesh.geometry.attributes.position.needsUpdate = true;
+    // Sync from Rust simulation if available
+    if (!isPythonBackend && gameLogic.get_sim_node_positions) {
+        const nodePositions = gameLogic.get_sim_node_positions();
+        if (nodePositions && nodeMeshes.length > 0) {
+            nodePositions.forEach((pos, i) => {
+                if (nodeMeshes[i]) {
+                    nodeMeshes[i].position.set(pos[0], pos[1], 0);
+                }
+            });
 
-        edgeLines.forEach(edge => {
-            const points = [
-                nodeMeshes[edge.a].position,
-                nodeMeshes[edge.b].position
-            ];
-            edge.line.geometry.setFromPoints(points);
-        });
+            // Update body mesh and edges
+            const mesh = playerMorph.children[0];
+            const positions = mesh.geometry.attributes.position.array;
+            nodeMeshes.forEach((node, i) => {
+                positions[i * 3] = node.position.x;
+                positions[i * 3 + 1] = node.position.y;
+            });
+            mesh.geometry.attributes.position.needsUpdate = true;
+
+            edgeLines.forEach(edge => {
+                const points = [
+                    nodeMeshes[edge.a].position,
+                    nodeMeshes[edge.b].position
+                ];
+                edge.line.geometry.setFromPoints(points);
+            });
+        }
     }
-
-    // Update player position and rotation from Python
-    playerMorph.position.set(gameLogic.get_x(), gameLogic.get_y(), gameLogic.get_z());
+    
+    // Update player position and rotation (camera follow)
+    playerMorph.position.x = gameLogic.get_x();
+    playerMorph.position.y = gameLogic.get_y();
+    playerMorph.position.z = gameLogic.get_z();
     playerMorph.rotation.y = gameLogic.get_rotation_y();
     
     // Update timer UI

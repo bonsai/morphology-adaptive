@@ -3,11 +3,26 @@ use crate::components::state::GameState;
 pub struct PhysicsEngine;
 
 impl PhysicsEngine {
-    pub fn update(state: &mut GameState, delta: f32, keys: &Vec<String>) {
+    pub fn update(state: &mut GameState, delta: f32, keys: &[String]) {
         if !state.race_started || state.race_completed {
             return;
         }
 
+        // 1. Soft Body Simulation Step
+        if let Some(sim) = &mut state.sim {
+            // Placeholder activations for now
+            let activations = vec![0.0; sim.muscle_joint_handles.len()];
+            sim.step(delta, &activations);
+            
+            // Sync center of mass to state position (simplified)
+            if let Some(&root_handle) = sim.node_handles.first() {
+                let rb = &sim.rigid_body_set[root_handle];
+                state.x = rb.translation().x;
+                state.y = rb.translation().y;
+            }
+        }
+
+        // 2. Original high-level physics for backward compatibility or simple movement
         let base_speed = 15.0;
         let rotation_speed = 3.0;
 

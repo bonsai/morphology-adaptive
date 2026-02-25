@@ -66,17 +66,17 @@ ARG ALGOVIVO_REPO_DIRNAME=${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.repo
 
 RUN mkdir ${MORPHOLOGY_ADAPTIVE_DIRNAME}
 COPY ./algovivo.json ${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.json
-COPY ./scripts ${MORPHOLOGY_ADAPTIVE_DIRNAME}/scripts
+# COPY ./scripts ${MORPHOLOGY_ADAPTIVE_DIRNAME}/scripts
 
-RUN python ${MORPHOLOGY_ADAPTIVE_DIRNAME}/scripts/install_algovivo.py \
-    --system \
-    --algovivo-config-filename ${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.json \
-    --repo-dirname ${ALGOVIVO_REPO_DIRNAME}
+# RUN python ${MORPHOLOGY_ADAPTIVE_DIRNAME}/scripts/install_algovivo.py \
+#    --system \
+#    --algovivo-config-filename ${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.json \
+#    --repo-dirname ${ALGOVIVO_REPO_DIRNAME}
 
-ENV PYTHONPATH=${MORPHOLOGY_ADAPTIVE_DIRNAME}
-ENV ALGOVIVO_NATIVE_LIB_FILENAME=${ALGOVIVO_REPO_DIRNAME}/build/native/algovivo.so
+# ENV PYTHONPATH=${MORPHOLOGY_ADAPTIVE_DIRNAME}
+# ENV ALGOVIVO_NATIVE_LIB_FILENAME=${ALGOVIVO_REPO_DIRNAME}/build/native/algovivo.so
 
 COPY ./data ${MORPHOLOGY_ADAPTIVE_DIRNAME}/data
-COPY ./attn ${MORPHOLOGY_ADAPTIVE_DIRNAME}/attn
+# COPY ./attn ${MORPHOLOGY_ADAPTIVE_DIRNAME}/attn
 
-RUN npm ci --prefix ${ALGOVIVO_REPO_DIRNAME}
+# RUN npm ci --prefix ${ALGOVIVO_REPO_DIRNAME}

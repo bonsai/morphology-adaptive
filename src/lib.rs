@@ -6,6 +6,7 @@ use crate::components::physics::PhysicsEngine;
 use crate::components::rules::RaceRules;
 use crate::components::creature::Morphology;
 use crate::components::policy::AttentionModel;
+use crate::components::soft_body::SoftBodySimulation;
 
 #[wasm_bindgen]
 impl GameState {
@@ -24,6 +25,22 @@ impl GameState {
     pub fn load_policy(&mut self, args_json: &str, weights_json: &str) {
         let model = AttentionModel::new(args_json, weights_json);
         self.policy = Some(model);
+    }
+
+    #[wasm_bindgen]
+    pub fn init_simulation(&mut self, mesh_json: &str) {
+        let sim = SoftBodySimulation::new(mesh_json);
+        self.sim = Some(sim);
+    }
+
+    #[wasm_bindgen]
+    pub fn get_sim_node_positions(&self) -> JsValue {
+        if let Some(sim) = &self.sim {
+            let pos = sim.get_node_positions();
+            serde_wasm_bindgen::to_value(&pos).unwrap()
+        } else {
+            JsValue::NULL
+        }
     }
 
     pub fn start_race(&mut self, now: f64) {

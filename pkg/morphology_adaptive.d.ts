@@ -7,10 +7,12 @@ export class GameState {
     get_current_time(): number;
     get_lap(): number;
     get_rotation_y(): number;
+    get_sim_node_positions(): any;
     get_speed(): number;
     get_x(): number;
     get_y(): number;
     get_z(): number;
+    init_simulation(mesh_json: string): void;
     is_completed(): boolean;
     load_policy(args_json: string, weights_json: string): void;
     constructor(total_laps: number, morphology: number);
@@ -44,10 +46,12 @@ export interface InitOutput {
     readonly gamestate_get_current_time: (a: number) => number;
     readonly gamestate_get_lap: (a: number) => number;
     readonly gamestate_get_rotation_y: (a: number) => number;
+    readonly gamestate_get_sim_node_positions: (a: number) => any;
     readonly gamestate_get_speed: (a: number) => number;
     readonly gamestate_get_x: (a: number) => number;
     readonly gamestate_get_y: (a: number) => number;
     readonly gamestate_get_z: (a: number) => number;
+    readonly gamestate_init_simulation: (a: number, b: number, c: number) => void;
     readonly gamestate_is_completed: (a: number) => number;
     readonly gamestate_load_policy: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly gamestate_new_wasm: (a: number, b: number) => number;
