@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morphology Adaptive Race Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameContainer {
+            position: relative;
+        }
+        
+        canvas {
+            border: 2px solid #444;
+            background-color: #1a1a1a;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+        
+        #startScreen, #endScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            font-size: 18px;
+            max-width: 80%;
+            text-align: center;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="ui">
+            <div>Lap: <span id="lapCounter">0/3</span></div>
+            <div>Time: <span id="timer">0.00s</span></div>
+            <div>Speed: <span id="speed">0 km/h</span></div>
+            <div>Morph: <span id="morphType">Biped</span></div>
+        </div>
+        
+        <div id="startScreen">
+            <h1>Morphology Adaptive Race</h1>
+            <p>Navigate the track with different creature morphologies that adapt to terrain conditions!</p>
+            <p>Controls: Arrow keys to move, Space to brake/reverse</p>
+            <button id="startButton">Start Race</button>
+        </div>
+        
+        <div id="endScreen" style="display: none;">
+            <h1>Race Complete!</h1>
+            <p>Final Time: <span id="finalTime">0.00s</span></p>
+            <button id="restartButton">Race Again</button>
+        </div>
+        
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
