@@ -57,24 +57,27 @@ RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
+# Install git for algovivo installation
+RUN apt-get update && apt-get install -y git
+
 RUN pip install uv
 
 RUN uv pip install --system torch==2.7.0
 
 ARG MORPHOLOGY_ADAPTIVE_DIRNAME=/morphology-adaptive
-ARG ALGOVIVO_REPO_DIRNAME=${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.repo
+ARG ALGOVIVO_REPO_DIRNAME=/opt/algovivo.repo
 
 RUN mkdir ${MORPHOLOGY_ADAPTIVE_DIRNAME}
 COPY ./algovivo.json ${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.json
-# COPY ./scripts ${MORPHOLOGY_ADAPTIVE_DIRNAME}/scripts
+COPY ./python ${MORPHOLOGY_ADAPTIVE_DIRNAME}/python
 
-# RUN python ${MORPHOLOGY_ADAPTIVE_DIRNAME}/scripts/install_algovivo.py \
-#    --system \
-#    --algovivo-config-filename ${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.json \
-#    --repo-dirname ${ALGOVIVO_REPO_DIRNAME}
+RUN python ${MORPHOLOGY_ADAPTIVE_DIRNAME}/python/scripts/install_algovivo.py \
+   --system \
+   --algovivo-config-filename ${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.json \
+   --repo-dirname ${ALGOVIVO_REPO_DIRNAME}
 
-# ENV PYTHONPATH=${MORPHOLOGY_ADAPTIVE_DIRNAME}
-# ENV ALGOVIVO_NATIVE_LIB_FILENAME=${ALGOVIVO_REPO_DIRNAME}/build/native/algovivo.so
+ENV PYTHONPATH=${MORPHOLOGY_ADAPTIVE_DIRNAME}/python:${MORPHOLOGY_ADAPTIVE_DIRNAME}
+ENV ALGOVIVO_NATIVE_LIB_FILENAME=${ALGOVIVO_REPO_DIRNAME}/build/native/algovivo.so
 
 COPY ./data ${MORPHOLOGY_ADAPTIVE_DIRNAME}/data
 
@@ -85,7 +88,7 @@ COPY ./game_logic.py ${MORPHOLOGY_ADAPTIVE_DIRNAME}/game_logic.py
 COPY ./main.py ${MORPHOLOGY_ADAPTIVE_DIRNAME}/main.py
 COPY ./index.html ${MORPHOLOGY_ADAPTIVE_DIRNAME}/index.html
 COPY ./script.js ${MORPHOLOGY_ADAPTIVE_DIRNAME}/script.js
-COPY ./src ${MORPHOLOGY_ADAPTIVE_DIRNAME}/src
+COPY rust ${MORPHOLOGY_ADAPTIVE_DIRNAME}/src
 COPY ./Cargo.toml ${MORPHOLOGY_ADAPTIVE_DIRNAME}/Cargo.toml
 COPY ./Cargo.lock ${MORPHOLOGY_ADAPTIVE_DIRNAME}/Cargo.lock
 

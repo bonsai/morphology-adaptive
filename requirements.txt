@@ -3,5 +3,8 @@ torch==2.7.0
 fastapi
 uvicorn
 
+numpy
 matplotlib
 imageio
+
+algovivo

@@ -1,1 +1,0 @@
-/build/target/wasm32-unknown-unknown/release/libmorphology_adaptive.rlib: /build/src/components/creature.rs /build/src/components/mod.rs /build/src/components/physics.rs /build/src/components/policy.rs /build/src/components/rules.rs /build/src/components/soft_body.rs /build/src/components/state.rs /build/src/lib.rs
