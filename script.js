@@ -1,6 +1,6 @@
 // Three.js variables
 let scene, camera, renderer;
-let playerMorph, track, terrainBlocks = [];
+let playerMorph1, playerMorph2, ropeMesh, arena;
 let clock;
 let creatureMeshData = null;
 let nodeMeshes = [];
@@ -12,7 +12,6 @@ let isPythonBackend = false;
 
 // Game state (JS-side for UI only)
 let uiState = {
-    totalLaps: 3,
     morphType: 'Biped'
 };
 
@@ -26,7 +25,8 @@ function init() {
     if (window.pyodide && window.GameState) {
         console.log("Using Python (Pyodide) backend");
         try {
-            gameLogic = window.GameState(uiState.totalLaps);
+            const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
+            gameLogic = window.GameState(morphIdx);
             isPythonBackend = true;
             console.log("Python GameState instance created");
         } catch (e) {
@@ -40,7 +40,7 @@ function init() {
                 console.log("Using pre-initialized Rust GameState with policy");
             } else {
                 const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
-                gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
+                gameLogic = new window.GameState(morphIdx);
             }
             isPythonBackend = false;
             console.log("Rust GameState instance created");
@@ -83,11 +83,11 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Create the racetrack (simplified as a circular path)
-    createTrack();
+    // Create the tug-of-war arena
+    createArena();
 
-    // Create the player morph (initially a biped)
-    createPlayerMorph();
+    // Create both player morphs for tug-of-war
+    createPlayerMorphs();
 
     // Set up event listeners
     setupEventListeners();
@@ -96,37 +96,62 @@ function init() {
     animate();
 }
 
-function createTrack() {
-    // Create a long flat road instead of floating blocks
-    const roadGeometry = new THREE.PlaneGeometry(200, 20);
-    const roadMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
-    const road = new THREE.Mesh(roadGeometry, roadMaterial);
-    road.rotation.x = -Math.PI / 2;
-    road.position.y = -0.05; // Slightly below ground level
-    scene.add(road);
+function createArena() {
+    // Create racing track with two lanes
+    const arenaGeometry = new THREE.PlaneGeometry(60, 8);
+    const arenaMaterial = new THREE.MeshPhongMaterial({ color: 0x228822 });
+    arena = new THREE.Mesh(arenaGeometry, arenaMaterial);
+    arena.rotation.x = -Math.PI / 2;
+    arena.position.y = -0.05;
+    scene.add(arena);
 
-    // Add track markings
-    const lineGeom = new THREE.PlaneGeometry(200, 0.2);
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const line = new THREE.Mesh(lineGeom, lineMat);
-    line.rotation.x = -Math.PI / 2;
-    line.position.y = 0;
-    scene.add(line);
+    // Create lane dividers
+    const laneDividerGeometry = new THREE.PlaneGeometry(0.1, 60);
+    const laneDividerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    
+    const laneDivider1 = new THREE.Mesh(laneDividerGeometry, laneDividerMaterial);
+    laneDivider1.rotation.x = -Math.PI / 2;
+    laneDivider1.position.set(0, 0.01, 1.0);
+    scene.add(laneDivider1);
+    
+    const laneDivider2 = new THREE.Mesh(laneDividerGeometry, laneDividerMaterial);
+    laneDivider2.rotation.x = -Math.PI / 2;
+    laneDivider2.position.set(0, 0.01, -1.0);
+    scene.add(laneDivider2);
+
+    // Create finish line
+    const finishLineGeometry = new THREE.PlaneGeometry(8, 1.0);
+    const finishLineMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.7 
+    });
+    const finishLine = new THREE.Mesh(finishLineGeometry, finishLineMaterial);
+    finishLine.rotation.x = -Math.PI / 2;
+    finishLine.position.set(20, 0.02, 0);
+    scene.add(finishLine);
 }
 
-function createPlayerMorph() {
-    // If we have mesh data, create the creature from it
-    if (creatureMeshData) {
-        createComplexCreature(creatureMeshData);
-        return;
-    }
+function createPlayerMorphs() {
+    // Create two creatures for racing
+    
+    // Creature 1 (Player 1, top lane, blue)
+    playerMorph1 = createSimpleCreature(0x0000ff);
+    playerMorph1.position.set(-10, 1, 2); // Top lane
+    scene.add(playerMorph1);
+    
+    // Creature 2 (Player 2, bottom lane, red) 
+    playerMorph2 = createSimpleCreature(0xff0000);
+    playerMorph2.position.set(-10, 1, -2); // Bottom lane
+    scene.add(playerMorph2);
+}
 
-    // Fallback to simple representation if mesh data isn't loaded yet
+function createSimpleCreature(color) {
     const group = new THREE.Group();
     
     // Body
     const bodyGeometry = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+    const bodyMaterial = new THREE.MeshPhongMaterial({ color: color });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.y = 1.5;
     group.add(body);
@@ -140,7 +165,7 @@ function createPlayerMorph() {
     
     // Legs (simplified)
     const legGeometry = new THREE.CapsuleGeometry(0.2, 0.8, 4, 8);
-    const legMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+    const legMaterial = new THREE.MeshPhongMaterial({ color: color });
     
     const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
     leftLeg.position.set(-0.3, 0.5, 0);
@@ -150,11 +175,7 @@ function createPlayerMorph() {
     rightLeg.position.set(0.3, 0.5, 0);
     group.add(rightLeg);
     
-    // Position the creature at the start of the track
-    group.position.set(10, 1, 0);
-    scene.add(group);
-    
-    playerMorph = group;
+    return group;
 }
 
 async function loadCreatureMesh(type) {
@@ -294,8 +315,8 @@ function startRace() {
         return;
     }
     try {
-        gameLogic.start_race(Date.now());
-        console.log("Race started in backend");
+        gameLogic.start_game(Date.now());
+        console.log("Game started in backend");
         document.getElementById('startScreen').style.display = 'none';
     } catch (e) {
         console.error("Failed to start race in backend:", e);
@@ -351,23 +372,31 @@ function updateGameState() {
         }
     }
     
-    // Update player position and rotation (camera follow)
-    playerMorph.position.x = gameLogic.get_x();
-    playerMorph.position.y = gameLogic.get_y();
-    playerMorph.position.z = gameLogic.get_z();
-    playerMorph.rotation.y = gameLogic.get_rotation_y();
+    // Update both creature positions for tug-of-war
+    if (playerMorph1 && playerMorph2) {
+        playerMorph1.position.x = gameLogic.get_creature1_x();
+        playerMorph1.position.y = gameLogic.get_creature1_y();
+        playerMorph1.position.z = gameLogic.get_creature1_z();
+        playerMorph1.rotation.y = gameLogic.get_creature1_rotation_y();
+        
+        playerMorph2.position.x = gameLogic.get_creature2_x();
+        playerMorph2.position.y = gameLogic.get_creature2_y();
+        playerMorph2.position.z = gameLogic.get_creature2_z();
+        playerMorph2.rotation.y = gameLogic.get_creature2_rotation_y();
+    }
     
     // Update timer UI
     document.getElementById('timer').textContent = gameLogic.get_current_time().toFixed(2) + 's';
     
-    // Update speed UI
-    document.getElementById('speed').textContent = Math.abs(gameLogic.get_speed() * 3.6).toFixed(1) + ' km/h';
-    
-    // Update morph type UI
-    document.getElementById('morphType').textContent = uiState.morphType;
-    
-    // Update lap counter UI
-    document.getElementById('lapCounter').textContent = `${gameLogic.get_lap()}/${uiState.totalLaps}`;
+    // Check for winner
+    if (gameLogic.is_completed()) {
+        const winner = gameLogic.get_winner();
+        if (winner > 0) {
+            document.getElementById('endScreen').style.display = 'flex';
+            document.getElementById('finalTime').textContent = gameLogic.get_current_time().toFixed(2) + 's';
+            document.getElementById('winnerText').textContent = winner === 1 ? "Player 1 Wins!" : "Player 2 Wins!";
+        }
+    }
     
     // Check for race completion
     if (gameLogic.is_completed()) {
@@ -388,14 +417,49 @@ function animate() {
     requestAnimationFrame(animate);
     
     updateGameState();
-    
-    // Rotate the track slightly for visual effect
-    if (track) {
-        track.rotation.y += 0.001;
-    }
+    updateCreaturePositions();
+    updateCreatureAnimations();
     
     // Render the scene
     renderer.render(scene, camera);
+}
+
+function updateCreaturePositions() {
+    if (!gameLogic) return;
+    
+    // Update creature positions from Rust game state
+    playerMorph1.position.x = gameLogic.get_creature1_x();
+    playerMorph1.position.z = 2.0; // Top lane
+    
+    playerMorph2.position.x = gameLogic.get_creature2_x();
+    playerMorph2.position.z = -2.0; // Bottom lane
+}
+
+function updateCreatureAnimations() {
+    if (!gameLogic) return;
+    
+    // Get speeds for animation
+    const speed1 = gameLogic.get_creature1_speed();
+    const speed2 = gameLogic.get_creature2_speed();
+    
+    // Animate legs based on speed
+    animateLegs(playerMorph1, speed1);
+    animateLegs(playerMorph2, speed2);
+}
+
+function animateLegs(creature, speed) {
+    const time = Date.now() * 0.002;
+    const intensity = Math.min(speed * 0.1, 1.0);
+    
+    // Animate legs (assuming legs are children 2 and 3)
+    if (creature.children.length >= 4) {
+        const leftLeg = creature.children[2];
+        const rightLeg = creature.children[3];
+        
+        // Walking animation
+        leftLeg.rotation.x = Math.sin(time) * intensity * 0.5;
+        rightLeg.rotation.x = Math.sin(time + Math.PI) * intensity * 0.5;
+    }
 }
 
 // Start the game when the page loads

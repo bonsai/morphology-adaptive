@@ -5,42 +5,61 @@ use crate::components::soft_body::SoftBodySimulation;
 
 #[wasm_bindgen]
 pub struct GameState {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub rotation_y: f32,
-    pub speed: f32,
-    pub lap: i32,
-    pub total_laps: i32,
-    pub last_angle: f32,
-    pub total_angle: f32,
-    pub race_started: bool,
-    pub race_completed: bool,
+    // Creature 1 (top lane, facing right)
+    pub creature1_x: f32,
+    pub creature1_y: f32,
+    pub creature1_z: f32,
+    pub creature1_rotation_y: f32,
+    pub creature1_speed: f32,
+    
+    // Creature 2 (bottom lane, facing right) 
+    pub creature2_x: f32,
+    pub creature2_y: f32,
+    pub creature2_z: f32,
+    pub creature2_rotation_y: f32,
+    pub creature2_speed: f32,
+    
+    // Racing game state
+    pub game_started: bool,
+    pub game_completed: bool,
     pub start_time: f64,
     pub current_time: f64,
+    pub winner: i32,  // 0 = no winner, 1 = creature1 wins, 2 = creature2 wins
+    
     #[allow(dead_code)]
-    pub(crate) creature: Creature,
+    pub(crate) creature1: Creature,
+    pub(crate) creature2: Creature,
     pub(crate) policy: Option<AttentionModel>,
     pub(crate) sim: Option<SoftBodySimulation>,
 }
 
 impl GameState {
-    pub fn new(total_laps: i32, morphology: Morphology) -> Self {
+    pub fn new(morphology: Morphology) -> Self {
         Self {
-            x: 10.0,
-            y: 1.0,
-            z: 0.0,
-            rotation_y: 0.0,
-            speed: 0.0,
-            lap: 0,
-            total_laps,
-            last_angle: 0.0,
-            total_angle: 0.0,
-            race_started: false,
-            race_completed: false,
+            // Creature 1: left side, facing right (0 degrees)
+            creature1_x: -5.0,
+            creature1_y: 1.0,
+            creature1_z: 0.0,
+            creature1_rotation_y: 0.0,
+            creature1_speed: 0.0,
+            
+            // Creature 2: right side, facing left (180 degrees)
+            creature2_x: 5.0,
+            creature2_y: 1.0,
+            creature2_z: 0.0,
+            creature2_rotation_y: std::f32::consts::PI,
+            creature2_speed: 0.0,
+            
+            // Tug-of-war game state
+            rope_position: 0.0,
+            game_started: false,
+            game_completed: false,
             start_time: 0.0,
             current_time: 0.0,
-            creature: Creature::new(morphology),
+            winner: 0,
+            
+            creature1: Creature::new(morphology),
+            creature2: Creature::new(morphology),
             policy: None,
             sim: None,
         }

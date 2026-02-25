@@ -112,10 +112,10 @@ export class GameState {
     /**
      * @param {number} delta
      * @param {number} now
-     * @param {string[]} keys
+     * @param {string} keys_json
      */
-    update(delta, now, keys) {
-        const ptr0 = passArrayJsValueToWasm0(keys, wasm.__wbindgen_malloc);
+    update(delta, now, keys_json) {
+        const ptr0 = passStringToWasm0(keys_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         wasm.gamestate_update(this.__wbg_ptr, delta, now, ptr0, len0);
     }
@@ -310,14 +310,6 @@ function __wbg_get_imports() {
             getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
             getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
         },
-        __wbg___wbindgen_string_get_3e5751597f39a112: function(arg0, arg1) {
-            const obj = arg1;
-            const ret = typeof(obj) === 'string' ? obj : undefined;
-            var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-            var len1 = WASM_VECTOR_LEN;
-            getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
-            getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
-        },
         __wbg___wbindgen_throw_39bc967c0e5a9b58: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
@@ -352,12 +344,6 @@ function __wbg_get_imports() {
 const GameStateFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_gamestate_free(ptr >>> 0, 1));
-
-function addToExternrefTable0(obj) {
-    const idx = wasm.__externref_table_alloc();
-    wasm.__wbindgen_externrefs.set(idx, obj);
-    return idx;
-}
 
 function debugString(val) {
     // primitive types
@@ -443,20 +429,6 @@ function getUint8ArrayMemory0() {
         cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
     }
     return cachedUint8ArrayMemory0;
-}
-
-function isLikeNone(x) {
-    return x === undefined || x === null;
-}
-
-function passArrayJsValueToWasm0(array, malloc) {
-    const ptr = malloc(array.length * 4, 4) >>> 0;
-    for (let i = 0; i < array.length; i++) {
-        const add = addToExternrefTable0(array[i]);
-        getDataViewMemory0().setUint32(ptr + 4 * i, add, true);
-    }
-    WASM_VECTOR_LEN = array.length;
-    return ptr;
 }
 
 function passStringToWasm0(arg, malloc, realloc) {

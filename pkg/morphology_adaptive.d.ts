@@ -17,7 +17,7 @@ export class GameState {
     load_policy(args_json: string, weights_json: string): void;
     constructor(total_laps: number, morphology: number);
     start_race(now: number): void;
-    update(delta: number, now: number, keys: string[]): void;
+    update(delta: number, now: number, keys_json: string): void;
     current_time: number;
     lap: number;
     last_angle: number;
@@ -87,7 +87,6 @@ export interface InitOutput {
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;
-    readonly __externref_table_alloc: () => number;
     readonly __wbindgen_start: () => void;
 }
 

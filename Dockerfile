@@ -77,6 +77,22 @@ COPY ./algovivo.json ${MORPHOLOGY_ADAPTIVE_DIRNAME}/algovivo.json
 # ENV ALGOVIVO_NATIVE_LIB_FILENAME=${ALGOVIVO_REPO_DIRNAME}/build/native/algovivo.so
 
 COPY ./data ${MORPHOLOGY_ADAPTIVE_DIRNAME}/data
+
+COPY ./requirements.txt ${MORPHOLOGY_ADAPTIVE_DIRNAME}/requirements.txt
+RUN pip install -r ${MORPHOLOGY_ADAPTIVE_DIRNAME}/requirements.txt
+
+COPY ./game_logic.py ${MORPHOLOGY_ADAPTIVE_DIRNAME}/game_logic.py
+COPY ./main.py ${MORPHOLOGY_ADAPTIVE_DIRNAME}/main.py
+COPY ./index.html ${MORPHOLOGY_ADAPTIVE_DIRNAME}/index.html
+COPY ./script.js ${MORPHOLOGY_ADAPTIVE_DIRNAME}/script.js
+COPY ./src ${MORPHOLOGY_ADAPTIVE_DIRNAME}/src
+COPY ./Cargo.toml ${MORPHOLOGY_ADAPTIVE_DIRNAME}/Cargo.toml
+COPY ./Cargo.lock ${MORPHOLOGY_ADAPTIVE_DIRNAME}/Cargo.lock
+
+WORKDIR ${MORPHOLOGY_ADAPTIVE_DIRNAME}
+RUN wasm-pack build --target web
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 # COPY ./attn ${MORPHOLOGY_ADAPTIVE_DIRNAME}/attn
 
 # RUN npm ci --prefix ${ALGOVIVO_REPO_DIRNAME}
