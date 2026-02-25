@@ -1,100 +1,76 @@
-# morphology-adaptive muscle-driven locomotion via attention mechanisms
+# Morphology Adaptive Race Game - 構成ドキュメント
 
-<p>
-  <a href="https://github.com/juniorrojas/morphology-adaptive/actions/workflows/test.yml">
-    <img src="https://github.com/juniorrojas/morphology-adaptive/actions/workflows/test.yml/badge.svg" alt="Test">
-  </a>
-  <a href="https://deepwiki.com/juniorrojas/morphology-adaptive">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
-  </a>
-</p>
+## 概要
+このゲームは、Three.jsを用いたJavaScriptベースの3Dレースゲームであり、元のPython研究リポジトリにおける形態適応の概念をシミュレートしている。プレイヤーは、異なる地形タイプに対応して自身の形状を変化させるキャラクターを操作する。
 
-This repository demonstrates how a single locomotion controller can work with different shapes (biped and quadruped). It uses an attention mechanism to handle an arbitrary number of inputs, and the same module is shared across all muscles to support an arbitrary number of outputs.
-
-More details in [this paper](https://juniorrojas.com/papers/2025-morphology-adaptive.pdf).
-
-<a href="https://www.youtube.com/watch?v=gmgyFIJz9ZY">
-  <img src="media/anim.gif">
-</a>
-
-View animation in higher quality [here](https://www.youtube.com/watch?v=gmgyFIJz9ZY).
-
-For simulation, this repository uses [algovivo](https://github.com/juniorrojas/algovivo), originally built for the browser using WebAssembly, but here a native build is used to enable PyTorch integration.
-
-## run on GitHub Actions
-
-The workflow [`trajectory-attn.yml`](.github/workflows/trajectory-attn.yml) runs the controller on both morphologies and generates a video. If you have your own copy or fork of this repository, you can [run the workflow from the GitHub Actions UI](https://docs.github.com/en/actions/how-tos/managing-workflow-runs-and-deployments/managing-workflow-runs/manually-running-a-workflow#running-a-workflow), no local installation needed. Once it completes, the video will be saved as a workflow artifact and can be downloaded from the workflow run page.
-
-## run locally
-
-Pull the Docker image:
-
-```sh
-docker pull ghcr.io/juniorrojas/morphology-adaptive/bundle:5ffaaed
+## ファイル構造
+```
+/workspace/
+├── index.html          # ゲームインターフェースのメインHTMLファイル
+├── script.js           # ゲームロジックとThree.js実装
+├── README.md           # この構成ドキュメント
+└── .gitignore          # Git無視ファイル
 ```
 
-Generate trajectory (use `biped` or `quadruped`):
+## ファイル説明
 
-```sh
-docker run --rm \
-  --user $(id -u):$(id -g) \
-  -v $(pwd):/workspace \
-  -w /workspace \
-  ghcr.io/juniorrojas/morphology-adaptive/bundle:fb1ec87 \
-  python /morphology-adaptive/scripts/generate_trajectory_with_attn_policy.py \
-  --agent /morphology-adaptive/data/agents/biped \
-  --policy /morphology-adaptive/data/policies/attn \
-  --steps 200 \
-  -o trajectory.out
-```
+### index.html
+ゲームのインターフェースを設定：
+- 3Dシーンのレンダリング用canvas要素
+- ラップ数、タイマー、速度、形態タイプを表示するUI要素
+- スタート画面とエンド画面（指示とコントロール）
+- CDNからThree.jsライブラリとscript.jsファイルを読み込み
+- ゲームコンテナに応じたレスポンシブスタイル
 
-Render frames:
+### script.js
+ゲーム機能を実装するコアJavaScriptファイル：
+- Three.jsのシーン、カメラ、レンダラーの初期化
+- ティルスノットジオメトリを使用したレーストラックの作成
+- 異なる素材で表現された地形ブロックの追加
+- キャラクター（両足歩行形態）をカプセルと球体ジオメトリで作成
+- キーボード入力による移動制御（矢印キー／WASD）
+- ラップカウンティングとタイム計測のゲーム状態管理
+- 実時間でのUI更新
+- スタートおよび再起動機能によるゲームフロー制御
 
-```sh
-docker run --rm \
-  --user $(id -u):$(id -g) \
-  -e HOME=/tmp \
-  -v $(pwd):/workspace \
-  -w /workspace \
-  ghcr.io/juniorrojas/morphology-adaptive/bundle:fb1ec87 \
-  node /morphology-adaptive/algovivo.repo/utils/trajectory/renderTrajectory.js \
-  --mesh ./trajectory.out/mesh.json \
-  --steps ./trajectory.out/steps \
-  --width 300 \
-  --height 300 \
-  -o frames.out
-```
+### .gitignore
+一時ファイルやシステム固有のファイルをバージョン管理から除外する標準的なgit無視ファイル。
 
-Make video:
+## 主要コンポーネント
 
-```sh
-ffmpeg -y \
-  -framerate 30 \
-  -i frames.out/%d.png \
-  -c:v libx264 \
-  -profile:v high \
-  -crf 20 \
-  -pix_fmt yuv420p \
-  video.out.mp4
-```
+### シーン設定
+- 調整可能な位置・視点を持つパースペクティブカメラ
+- 実際のレンダリングに適したアンビエントライトとディレクショナルライト
+- サイドブルーの背景色
 
-## citation
+### レーストラック
+- トーラスノットジオメトリで作られた円形パス
+- トラック周囲に配置された地形ブロック（異なる表面タイプを表す）
+- 地形タイプごとの視覚的区別（土・芝生）
 
-```bibtex
-@inproceedings{10.1145/3712255.3734277,
-  author = {Rojas, Junior},
-  title = {Morphology-Adaptive Muscle-Driven Locomotion via Attention Mechanisms},
-  year = {2025},
-  isbn = {9798400714641},
-  publisher = {Association for Computing Machinery},
-  address = {New York, NY, USA},
-  url = {https://doi.org/10.1145/3712255.3734277},
-  doi = {10.1145/3712255.3734277},
-  booktitle = {Proceedings of the Genetic and Evolutionary Computation Conference Companion},
-  pages = {2138–2142},
-  numpages = {5},
-  keywords = {neural networks, attention mechanisms, virtual creatures},
-  location = {NH Malaga Hotel, Malaga, Spain},
-  series = {GECCO '25 Companion}
-}
-```
+### プレイヤーキャラクター
+- カプセルと球体ジオメトリを使用した両足歩行設計
+- ボディパーツ（ボディ、頭、脚）をグループ化したメッシュ構造
+- 移動用の位置・回転制御
+
+### ゲームメカニクス
+- 距離走行に基づくラップカウンティングシステム
+- レース完了時間の計測タイマー
+- 速度計算と表示
+- 形態タイプインジケータ（現時点では静的「両足歩行」）
+
+### ユーザインターフェース
+- 実時間で更新されるラップ数、経過時間、現在速度の表示
+- ゲーム説明とコントロールを含むスタート画面
+- 最終時間の表示と再起動オプションを備えたエンド画面
+- キーボードコントロール：矢印キーまたはWASDで移動、スペースキーでブレーキ／逆走
+
+## 技術実装のポイント
+- CDNからのThree.js r128を使用
+- スムーズなアニメーションループのためにrequestAnimationFrameを利用
+- キーボードイベントリスナーでプレイヤー入力を処理
+- 三つのジオメトリベクトル数学を使って位置・回転を計算
+- 速度と加速を含む基本的な物理シミュレーション
+- ウィンドウサイズ変更に対応するレスポンシブデザイン
+
+この実装は、元の研究リポジトリの形態適応の概念を捉えつつ、ブラウザ上で魅力的なレースゲーム体験を提供している。
