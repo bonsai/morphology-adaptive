@@ -102,25 +102,47 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
     <script type="module">
-        import init, { GameState } from '../pkg/morphology_adaptive.js';
-
-        async function run() {
+        // 1. Try to load Rust WASM
+        // 2. Fallback to Python (Pyodide)
+        
+        async function loadBackends() {
+            let rustLoaded = false;
+            
             try {
+                // Try loading Rust WASM
+                const { default: init, GameState } = await import('./pkg/morphology_adaptive.js');
                 await init();
                 window.GameState = GameState;
-                
-                // script.jsを読み込む
-                const script = document.createElement('script');
-                script.src = 'script.js';
-                document.body.appendChild(script);
+                rustLoaded = true;
+                console.log("Rust WASM loaded successfully");
             } catch (e) {
-                console.error("Failed to load WASM:", e);
-                // Fallback or error message
+                console.log("Rust WASM not found or failed to load, trying Python fallback...");
             }
+
+            if (!rustLoaded) {
+                try {
+                    const pyodide = await loadPyodide();
+                    const response = await fetch('game_logic.py');
+                    const pythonCode = await response.text();
+                    pyodide.runPython(pythonCode);
+                    
+                    window.pyodide = pyodide;
+                    window.GameState = pyodide.globals.get('GameState');
+                    console.log("Python logic loaded successfully");
+                } catch (e) {
+                    console.error("Failed to load any backend:", e);
+                }
+            }
+            
+            // Load script.js after backend is ready
+            const script = document.createElement('script');
+            script.src = 'script.js';
+            document.body.appendChild(script);
         }
 
-        run();
+        loadBackends();
     </script>
 </body>
 </html>

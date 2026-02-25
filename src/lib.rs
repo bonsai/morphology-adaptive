@@ -46,7 +46,7 @@ impl GameState {
         self.total_angle = 0.0;
     }
 
-    pub fn update(&mut self, delta: f32, now: f64, keys: &[String]) {
+    pub fn update(&mut self, delta: f32, now: f64, keys: Vec<String>) {
         if !self.race_started || self.race_completed {
             return;
         }

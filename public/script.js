@@ -3,8 +3,9 @@ let scene, camera, renderer;
 let playerMorph, track, terrainBlocks = [];
 let clock;
 
-// Rust WASM instance
-let rustGame;
+// Backend detection and Game Logic abstraction
+let gameLogic;
+let isPythonBackend = false;
 
 // Game state (JS-side for UI only)
 let uiState = {
@@ -17,10 +18,17 @@ let keys = {};
 
 // Initialize the game
 function init() {
-    if (window.GameState) {
-        rustGame = new window.GameState(uiState.totalLaps);
+    // Determine backend
+    if (window.pyodide && window.GameState) {
+        console.log("Using Python (Pyodide) backend");
+        gameLogic = window.GameState(uiState.totalLaps);
+        isPythonBackend = true;
+    } else if (window.GameState) {
+        console.log("Using Rust (WASM) backend");
+        gameLogic = new window.GameState(uiState.totalLaps);
+        isPythonBackend = false;
     } else {
-        console.error("Rust GameState not loaded");
+        console.error("No GameState backend (Rust or Python) loaded");
         return;
     }
 
@@ -145,12 +153,16 @@ function setupEventListeners() {
 }
 
 function startRace() {
-    rustGame.start_race(Date.now());
+    gameLogic.start_race(Date.now());
     document.getElementById('startScreen').style.display = 'none';
 }
 
 function restartGame() {
-    rustGame = new window.GameState(uiState.totalLaps);
+    if (isPythonBackend) {
+        gameLogic = window.GameState(uiState.totalLaps);
+    } else {
+        gameLogic = new window.GameState(uiState.totalLaps);
+    }
     playerMorph.position.set(10, 1, 0);
     playerMorph.rotation.set(0, 0, 0);
     document.getElementById('endScreen').style.display = 'none';
@@ -161,27 +173,27 @@ function updateGameState() {
     const delta = clock.getDelta();
     const activeKeys = Object.keys(keys).filter(k => keys[k]);
     
-    rustGame.update(delta, Date.now(), activeKeys);
+    gameLogic.update(delta, Date.now(), activeKeys);
     
-    // Update player position and rotation from Rust
-    playerMorph.position.set(rustGame.get_x(), rustGame.get_y(), rustGame.get_z());
-    playerMorph.rotation.y = rustGame.get_rotation_y();
+    // Update player position and rotation from Python
+    playerMorph.position.set(gameLogic.get_x(), gameLogic.get_y(), gameLogic.get_z());
+    playerMorph.rotation.y = gameLogic.get_rotation_y();
     
     // Update timer UI
-    document.getElementById('timer').textContent = rustGame.get_current_time().toFixed(2) + 's';
+    document.getElementById('timer').textContent = gameLogic.get_current_time().toFixed(2) + 's';
     
     // Update speed UI
-    document.getElementById('speed').textContent = Math.abs(rustGame.get_speed() * 3.6).toFixed(1) + ' km/h';
+    document.getElementById('speed').textContent = Math.abs(gameLogic.get_speed() * 3.6).toFixed(1) + ' km/h';
     
     // Update morph type UI
     document.getElementById('morphType').textContent = uiState.morphType;
     
     // Update lap counter UI
-    document.getElementById('lapCounter').textContent = `${rustGame.get_lap()}/${uiState.totalLaps}`;
+    document.getElementById('lapCounter').textContent = `${gameLogic.get_lap()}/${uiState.totalLaps}`;
     
     // Check for race completion
-    if (rustGame.is_completed()) {
-        document.getElementById('finalTime').textContent = rustGame.get_current_time().toFixed(2) + 's';
+    if (gameLogic.is_completed()) {
+        document.getElementById('finalTime').textContent = gameLogic.get_current_time().toFixed(2) + 's';
         document.getElementById('endScreen').style.display = 'flex';
     }
 
