@@ -9,6 +9,7 @@ export const gamestate_get_x: (a: number) => number;
 export const gamestate_get_y: (a: number) => number;
 export const gamestate_get_z: (a: number) => number;
 export const gamestate_is_completed: (a: number) => number;
+export const gamestate_load_policy: (a: number, b: number, c: number, d: number, e: number) => void;
 export const gamestate_new_wasm: (a: number, b: number) => number;
 export const gamestate_start_race: (a: number, b: number) => void;
 export const gamestate_update: (a: number, b: number, c: number, d: number, e: number) => void;

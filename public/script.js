@@ -35,8 +35,13 @@ function init() {
     } else if (window.GameState) {
         console.log("Using Rust (WASM) backend");
         try {
-            const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
-            gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
+            if (window.gameStateInstance) {
+                gameLogic = window.gameStateInstance;
+                console.log("Using pre-initialized Rust GameState with policy");
+            } else {
+                const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
+                gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
+            }
             isPythonBackend = false;
             console.log("Rust GameState instance created");
         } catch (e) {
@@ -184,6 +189,12 @@ function createComplexCreature(data) {
     const nodes = data.pos;
     const triangles = data.triangles;
 
+    // Find min Y to ground the creature
+    let minY = Infinity;
+    nodes.forEach(pos => {
+        if (pos[1] < minY) minY = pos[1];
+    });
+
     // Create a mesh for the body triangles
     const geometry = new THREE.BufferGeometry();
     const vertices = new Float32Array(nodes.length * 3);
@@ -191,7 +202,7 @@ function createComplexCreature(data) {
 
     nodes.forEach((pos, i) => {
         vertices[i * 3] = pos[0];
-        vertices[i * 3 + 1] = pos[1];
+        vertices[i * 3 + 1] = pos[1] - minY; // Ground it
         vertices[i * 3 + 2] = 0;
     });
 
@@ -218,7 +229,7 @@ function createComplexCreature(data) {
     
     nodes.forEach((pos, i) => {
         const node = new THREE.Mesh(nodeGeom, nodeMat);
-        node.position.set(pos[0], pos[1], 0);
+        node.position.set(pos[0], pos[1] - minY, 0); // Ground it
         group.add(node);
         nodeMeshes.push(node);
     });
@@ -233,8 +244,8 @@ function createComplexCreature(data) {
             if (!edgePairs.has(key)) {
                 edgePairs.add(key);
                 const points = [
-                    new THREE.Vector3(nodes[a][0], nodes[a][1], 0),
-                    new THREE.Vector3(nodes[b][0], nodes[b][1], 0)
+                    new THREE.Vector3(nodes[a][0], nodes[a][1] - minY, 0),
+                    new THREE.Vector3(nodes[b][0], nodes[b][1] - minY, 0)
                 ];
                 const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
                 const line = new THREE.Line(lineGeom, lineMat);

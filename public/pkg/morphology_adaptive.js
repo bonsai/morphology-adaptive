@@ -68,6 +68,17 @@ export class GameState {
         return ret !== 0;
     }
     /**
+     * @param {string} args_json
+     * @param {string} weights_json
+     */
+    load_policy(args_json, weights_json) {
+        const ptr0 = passStringToWasm0(args_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(weights_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.gamestate_load_policy(this.__wbg_ptr, ptr0, len0, ptr1, len1);
+    }
+    /**
      * @param {number} total_laps
      * @param {number} morphology
      */

@@ -114,7 +114,19 @@
                 // Try loading Rust WASM
                 const { default: init, GameState } = await import('./pkg/morphology_adaptive.js');
                 await init();
+                
+                // Create instance and load policy
+                const gameState = new GameState(3, 0); // Default biped
+                
+                const argsResp = await fetch('data/policies/attn/args.json');
+                const weightsResp = await fetch('data/policies/attn/weights.json');
+                const argsJson = await argsResp.text();
+                const weightsJson = await weightsResp.text();
+                
+                gameState.load_policy(argsJson, weightsJson);
+                
                 window.GameState = GameState;
+                window.gameStateInstance = gameState; // Pre-initialized instance
                 rustLoaded = true;
                 console.log("Rust WASM loaded successfully");
             } catch (e) {

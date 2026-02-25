@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 use crate::components::creature::{Creature, Morphology};
+use crate::components::policy::AttentionModel;
 
 #[wasm_bindgen]
 pub struct GameState {
@@ -18,6 +19,7 @@ pub struct GameState {
     pub current_time: f64,
     #[allow(dead_code)]
     pub(crate) creature: Creature,
+    pub(crate) policy: Option<AttentionModel>,
 }
 
 impl GameState {
@@ -37,6 +39,7 @@ impl GameState {
             start_time: 0.0,
             current_time: 0.0,
             creature: Creature::new(morphology),
+            policy: None,
         }
     }
 }

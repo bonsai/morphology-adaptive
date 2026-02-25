@@ -5,6 +5,7 @@ pub use crate::components::state::GameState;
 use crate::components::physics::PhysicsEngine;
 use crate::components::rules::RaceRules;
 use crate::components::creature::Morphology;
+use crate::components::policy::AttentionModel;
 
 #[wasm_bindgen]
 impl GameState {
@@ -17,6 +18,12 @@ impl GameState {
             _ => Morphology::Biped,
         };
         GameState::new(total_laps, morph)
+    }
+
+    #[wasm_bindgen]
+    pub fn load_policy(&mut self, args_json: &str, weights_json: &str) {
+        let model = AttentionModel::new(args_json, weights_json);
+        self.policy = Some(model);
     }
 
     pub fn start_race(&mut self, now: f64) {

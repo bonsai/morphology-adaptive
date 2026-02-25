@@ -12,6 +12,7 @@ export class GameState {
     get_y(): number;
     get_z(): number;
     is_completed(): boolean;
+    load_policy(args_json: string, weights_json: string): void;
     constructor(total_laps: number, morphology: number);
     start_race(now: number): void;
     update(delta: number, now: number, keys: string[]): void;
@@ -48,6 +49,7 @@ export interface InitOutput {
     readonly gamestate_get_y: (a: number) => number;
     readonly gamestate_get_z: (a: number) => number;
     readonly gamestate_is_completed: (a: number) => number;
+    readonly gamestate_load_policy: (a: number, b: number, c: number, d: number, e: number) => void;
     readonly gamestate_new_wasm: (a: number, b: number) => number;
     readonly gamestate_start_race: (a: number, b: number) => void;
     readonly gamestate_update: (a: number, b: number, c: number, d: number, e: number) => void;
