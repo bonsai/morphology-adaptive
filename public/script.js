@@ -2,6 +2,9 @@
 let scene, camera, renderer;
 let playerMorph, track, terrainBlocks = [];
 let clock;
+let creatureMeshData = null;
+let nodeMeshes = [];
+let edgeLines = [];
 
 // Backend detection and Game Logic abstraction
 let gameLogic;
@@ -18,20 +21,39 @@ let keys = {};
 
 // Initialize the game
 function init() {
+    console.log("Initializing game...");
     // Determine backend
     if (window.pyodide && window.GameState) {
         console.log("Using Python (Pyodide) backend");
-        gameLogic = window.GameState(uiState.totalLaps);
-        isPythonBackend = true;
+        try {
+            gameLogic = window.GameState(uiState.totalLaps);
+            isPythonBackend = true;
+            console.log("Python GameState instance created");
+        } catch (e) {
+            console.error("Failed to create Python GameState:", e);
+        }
     } else if (window.GameState) {
         console.log("Using Rust (WASM) backend");
-        const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
-        gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
-        isPythonBackend = false;
+        try {
+            const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
+            gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
+            isPythonBackend = false;
+            console.log("Rust GameState instance created");
+        } catch (e) {
+            console.error("Failed to create Rust GameState:", e);
+        }
     } else {
-        console.error("No GameState backend (Rust or Python) loaded");
+        console.error("No GameState backend (Rust or Python) loaded. Check console for previous errors.");
         return;
     }
+
+    if (!gameLogic) {
+        console.error("gameLogic failed to initialize");
+        return;
+    }
+
+    // Load creature mesh data
+    loadCreatureMesh(uiState.morphType);
 
     clock = new THREE.Clock();
     // Create scene
@@ -95,7 +117,13 @@ function createTrack() {
 }
 
 function createPlayerMorph() {
-    // Create a simple representation of a biped creature
+    // If we have mesh data, create the creature from it
+    if (creatureMeshData) {
+        createComplexCreature(creatureMeshData);
+        return;
+    }
+
+    // Fallback to simple representation if mesh data isn't loaded yet
     const group = new THREE.Group();
     
     // Body
@@ -131,6 +159,101 @@ function createPlayerMorph() {
     playerMorph = group;
 }
 
+async function loadCreatureMesh(type) {
+    const path = `data/agents/${type.toLowerCase()}/mesh.json`;
+    try {
+        const response = await fetch(path);
+        creatureMeshData = await response.json();
+        console.log(`Loaded mesh for ${type}`);
+        
+        // Replace current player morph with complex one
+        if (playerMorph) {
+            scene.remove(playerMorph);
+            createComplexCreature(creatureMeshData);
+        }
+    } catch (e) {
+        console.error(`Failed to load mesh for ${type}:`, e);
+    }
+}
+
+function createComplexCreature(data) {
+    const group = new THREE.Group();
+    nodeMeshes = [];
+    edgeLines = [];
+
+    const nodes = data.pos;
+    const triangles = data.triangles;
+
+    // Create a mesh for the body triangles
+    const geometry = new THREE.BufferGeometry();
+    const vertices = new Float32Array(nodes.length * 3);
+    const indices = [];
+
+    nodes.forEach((pos, i) => {
+        vertices[i * 3] = pos[0];
+        vertices[i * 3 + 1] = pos[1];
+        vertices[i * 3 + 2] = 0;
+    });
+
+    triangles.forEach(tri => {
+        indices.push(tri[0], tri[1], tri[2]);
+    });
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshPhongMaterial({ 
+        color: 0x00ff00, 
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.8
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    group.add(mesh);
+
+    // Create spheres for nodes
+    const nodeGeom = new THREE.SphereGeometry(0.05, 8, 8);
+    const nodeMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    
+    nodes.forEach((pos, i) => {
+        const node = new THREE.Mesh(nodeGeom, nodeMat);
+        node.position.set(pos[0], pos[1], 0);
+        group.add(node);
+        nodeMeshes.push(node);
+    });
+
+    // Create lines for edges (from triangles)
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+    const edgePairs = new Set();
+    
+    triangles.forEach(tri => {
+        const addEdge = (a, b) => {
+            const key = [a, b].sort().join('-');
+            if (!edgePairs.has(key)) {
+                edgePairs.add(key);
+                const points = [
+                    new THREE.Vector3(nodes[a][0], nodes[a][1], 0),
+                    new THREE.Vector3(nodes[b][0], nodes[b][1], 0)
+                ];
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(lineGeom, lineMat);
+                group.add(line);
+                edgeLines.push({ line, a, b });
+            }
+        };
+        addEdge(tri[0], tri[1]);
+        addEdge(tri[1], tri[2]);
+        addEdge(tri[2], tri[0]);
+    });
+
+    group.position.set(10, 1, 0);
+    // Scale down and center
+    group.scale.set(0.5, 0.5, 0.5);
+    scene.add(group);
+    playerMorph = group;
+}
+
 function setupEventListeners() {
     // Keyboard event listeners
     window.addEventListener('keydown', (event) => {
@@ -154,9 +277,20 @@ function setupEventListeners() {
 }
 
 function startRace() {
-    gameLogic.start_race(Date.now());
-    document.getElementById('startScreen').style.display = 'none';
+    console.log("Start button clicked");
+    if (!gameLogic) {
+        console.error("Cannot start: gameLogic is not initialized");
+        return;
+    }
+    try {
+        gameLogic.start_race(Date.now());
+        console.log("Race started in backend");
+        document.getElementById('startScreen').style.display = 'none';
+    } catch (e) {
+        console.error("Failed to start race in backend:", e);
+    }
 }
+
 
 function restartGame() {
     if (isPythonBackend) {
@@ -177,6 +311,36 @@ function updateGameState() {
     
     gameLogic.update(delta, Date.now(), activeKeys);
     
+    // Procedural animation for the creature nodes
+    if (creatureMeshData && nodeMeshes.length > 0) {
+        const time = Date.now() * 0.005;
+        const speed = gameLogic.get_speed();
+        
+        nodeMeshes.forEach((node, i) => {
+            const originalPos = creatureMeshData.pos[i];
+            // Add some wobble based on speed and time
+            const wobble = Math.sin(time + originalPos[0] * 5) * 0.1 * (speed / 15.0);
+            node.position.y = originalPos[1] + wobble;
+        });
+
+        // Update edges and body mesh
+        const mesh = playerMorph.children[0];
+        const positions = mesh.geometry.attributes.position.array;
+        
+        nodeMeshes.forEach((node, i) => {
+            positions[i * 3 + 1] = node.position.y;
+        });
+        mesh.geometry.attributes.position.needsUpdate = true;
+
+        edgeLines.forEach(edge => {
+            const points = [
+                nodeMeshes[edge.a].position,
+                nodeMeshes[edge.b].position
+            ];
+            edge.line.geometry.setFromPoints(points);
+        });
+    }
+
     // Update player position and rotation from Python
     playerMorph.position.set(gameLogic.get_x(), gameLogic.get_y(), gameLogic.get_z());
     playerMorph.rotation.y = gameLogic.get_rotation_y();
@@ -223,4 +387,8 @@ function animate() {
 }
 
 // Start the game when the page loads
-window.onload = init;
+if (document.readyState === 'complete') {
+    init();
+} else {
+    window.addEventListener('load', init);
+}

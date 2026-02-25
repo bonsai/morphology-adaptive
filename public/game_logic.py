@@ -31,11 +31,14 @@ class GameState:
         base_speed = 15.0
         rotation_speed = 3.0
 
-        # keys_json is a list of strings
-        move_forward = any(k in ["ArrowUp", "KeyW"] for k in keys_json)
-        move_backward = any(k in ["ArrowDown", "KeyS", "Space"] for k in keys_json)
-        turn_left = any(k in ["ArrowLeft", "KeyA"] for k in keys_json)
-        turn_right = any(k in ["ArrowRight", "KeyD"] for k in keys_json)
+        # Convert JsProxy to list if needed
+        keys = list(keys_json) if hasattr(keys_json, 'to_py') else keys_json
+
+        move_forward = any(k in ["ArrowUp", "KeyW"] for k in keys)
+        move_backward = any(k in ["ArrowDown", "KeyS", "Space"] for k in keys)
+        turn_left = any(k in ["ArrowLeft", "KeyA"] for k in keys)
+        turn_right = any(k in ["ArrowRight", "KeyD"] for k in keys)
+
 
         if move_forward:
             self.speed = base_speed

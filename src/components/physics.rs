@@ -46,3 +46,35 @@ impl PhysicsEngine {
         state.z += state.rotation_y.cos() * distance;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::components::state::GameState;
+    use crate::components::creature::Morphology;
+
+    #[test]
+    fn test_physics_forward() {
+        let mut state = GameState::new(3, Morphology::Biped);
+        state.race_started = true;
+        
+        let keys = vec!["ArrowUp".to_string()];
+        PhysicsEngine::update(&mut state, 0.1, &keys);
+        
+        assert_eq!(state.speed, 15.0);
+        assert!(state.z > 0.0);
+        assert_eq!(state.x, 10.0);
+    }
+
+    #[test]
+    fn test_physics_turn() {
+        let mut state = GameState::new(3, Morphology::Biped);
+        state.race_started = true;
+        
+        let keys = vec!["ArrowLeft".to_string()];
+        PhysicsEngine::update(&mut state, 0.1, &keys);
+        
+        assert!(state.rotation_y > 0.0);
+    }
+}
+
