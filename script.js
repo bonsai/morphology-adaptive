@@ -325,14 +325,24 @@ function startRace() {
 
 
 function restartGame() {
+    const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
+    
     if (isPythonBackend) {
-        gameLogic = window.GameState(uiState.totalLaps);
+        gameLogic = window.GameState(morphIdx);
     } else {
-        const morphIdx = uiState.morphType === 'Biped' ? 0 : (uiState.morphType === 'Quadruped' ? 1 : 2);
-        gameLogic = new window.GameState(uiState.totalLaps, morphIdx);
+        gameLogic = new window.GameState(morphIdx);
     }
-    playerMorph.position.set(10, 1, 0);
-    playerMorph.rotation.set(0, 0, 0);
+    
+    // Reset positions
+    if (playerMorph1) {
+        playerMorph1.position.set(-10, 1, 2);
+        playerMorph1.rotation.set(0, 0, 0);
+    }
+    if (playerMorph2) {
+        playerMorph2.position.set(-10, 1, -2);
+        playerMorph2.rotation.set(0, 0, 0);
+    }
+    
     document.getElementById('endScreen').style.display = 'none';
     startRace();
 }
@@ -372,7 +382,7 @@ function updateGameState() {
         }
     }
     
-    // Update both creature positions for tug-of-war
+    // Update creature positions
     if (playerMorph1 && playerMorph2) {
         playerMorph1.position.x = gameLogic.get_creature1_x();
         playerMorph1.position.y = gameLogic.get_creature1_y();
@@ -397,20 +407,16 @@ function updateGameState() {
             document.getElementById('winnerText').textContent = winner === 1 ? "Player 1 Wins!" : "Player 2 Wins!";
         }
     }
-    
-    // Check for race completion
-    if (gameLogic.is_completed()) {
-        document.getElementById('finalTime').textContent = gameLogic.get_current_time().toFixed(2) + 's';
-        document.getElementById('endScreen').style.display = 'flex';
-    }
 
-    // Camera follow
-    const relativeCameraOffset = new THREE.Vector3(0, 5, -10);
-    const cameraOffset = relativeCameraOffset.applyMatrix4(playerMorph.matrixWorld);
-    camera.position.x = cameraOffset.x;
-    camera.position.y = cameraOffset.y;
-    camera.position.z = cameraOffset.z;
-    camera.lookAt(playerMorph.position);
+    // Camera follow (follow Player 1)
+    if (playerMorph1) {
+        const relativeCameraOffset = new THREE.Vector3(0, 5, -10);
+        const cameraOffset = relativeCameraOffset.applyMatrix4(playerMorph1.matrixWorld);
+        camera.position.x = cameraOffset.x;
+        camera.position.y = cameraOffset.y;
+        camera.position.z = cameraOffset.z;
+        camera.lookAt(playerMorph1.position);
+    }
 }
 
 function animate() {
