@@ -1,19 +1,15 @@
 // Three.js variables
 let scene, camera, renderer;
 let playerMorph, track, terrainBlocks = [];
-let clock = new THREE.Clock();
+let clock;
 
-// Game state
-let gameState = {
-    startTime: 0,
-    currentTime: 0,
-    lap: 0,
+// Rust WASM instance
+let rustGame;
+
+// Game state (JS-side for UI only)
+let uiState = {
     totalLaps: 3,
-    raceStarted: false,
-    raceCompleted: false,
-    speed: 0,
-    morphType: 'Biped',
-    positionOnTrack: 0 // A parameter representing progress along the track
+    morphType: 'Biped'
 };
 
 // Input handling
@@ -21,6 +17,14 @@ let keys = {};
 
 // Initialize the game
 function init() {
+    if (window.GameState) {
+        rustGame = new window.GameState(uiState.totalLaps);
+    } else {
+        console.error("Rust GameState not loaded");
+        return;
+    }
+
+    clock = new THREE.Clock();
     // Create scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB); // Sky blue
@@ -141,16 +145,12 @@ function setupEventListeners() {
 }
 
 function startRace() {
-    gameState.raceStarted = true;
-    gameState.startTime = Date.now();
+    rustGame.start_race(Date.now());
     document.getElementById('startScreen').style.display = 'none';
 }
 
 function restartGame() {
-    gameState.lap = 0;
-    gameState.currentTime = 0;
-    gameState.raceCompleted = false;
-    gameState.positionOnTrack = 0;
+    rustGame = new window.GameState(uiState.totalLaps);
     playerMorph.position.set(10, 1, 0);
     playerMorph.rotation.set(0, 0, 0);
     document.getElementById('endScreen').style.display = 'none';
@@ -158,61 +158,40 @@ function restartGame() {
 }
 
 function updateGameState() {
-    if (!gameState.raceStarted || gameState.raceCompleted) return;
-    
     const delta = clock.getDelta();
-    gameState.currentTime = (Date.now() - gameState.startTime) / 1000;
+    const activeKeys = Object.keys(keys).filter(k => keys[k]);
+    
+    rustGame.update(delta, Date.now(), activeKeys);
+    
+    // Update player position and rotation from Rust
+    playerMorph.position.set(rustGame.get_x(), rustGame.get_y(), rustGame.get_z());
+    playerMorph.rotation.y = rustGame.get_rotation_y();
     
     // Update timer UI
-    document.getElementById('timer').textContent = gameState.currentTime.toFixed(2) + 's';
-    
-    // Simple movement based on keyboard input
-    const speed = 5; // Units per second
-    const rotationSpeed = 2; // Radians per second
-    
-    if (keys['ArrowUp'] || keys['KeyW']) {
-        // Move forward along the current direction
-        playerMorph.translateZ(-delta * speed);
-        gameState.speed = speed * 3.6; // Convert to km/h approximation
-    } else {
-        gameState.speed *= 0.9; // Decelerate
-    }
-    
-    if (keys['ArrowLeft'] || keys['KeyA']) {
-        playerMorph.rotateY(delta * rotationSpeed);
-    }
-    if (keys['ArrowRight'] || keys['KeyD']) {
-        playerMorph.rotateY(-delta * rotationSpeed);
-    }
+    document.getElementById('timer').textContent = rustGame.get_current_time().toFixed(2) + 's';
     
     // Update speed UI
-    document.getElementById('speed').textContent = Math.abs(gameState.speed).toFixed(1) + ' km/h';
+    document.getElementById('speed').textContent = Math.abs(rustGame.get_speed() * 3.6).toFixed(1) + ' km/h';
     
-    // Update morph type UI (will be dynamic later)
-    document.getElementById('morphType').textContent = gameState.morphType;
-    
-    // Simple lap counting based on distance traveled
-    // In a real implementation, we'd check for crossing start/finish line
-    const circumference = 2 * Math.PI * 10; // Approximate track circumference
-    const distanceTraveled = Math.sqrt(
-        Math.pow(playerMorph.position.x - 10, 2) + 
-        Math.pow(playerMorph.position.z, 2)
-    );
-    
-    const lapsCompleted = Math.floor(distanceTraveled / circumference);
-    if (lapsCompleted > gameState.lap && lapsCompleted <= gameState.totalLaps) {
-        gameState.lap = lapsCompleted;
-    }
+    // Update morph type UI
+    document.getElementById('morphType').textContent = uiState.morphType;
     
     // Update lap counter UI
-    document.getElementById('lapCounter').textContent = `${gameState.lap}/${gameState.totalLaps}`;
+    document.getElementById('lapCounter').textContent = `${rustGame.get_lap()}/${uiState.totalLaps}`;
     
     // Check for race completion
-    if (gameState.lap >= gameState.totalLaps) {
-        gameState.raceCompleted = true;
-        document.getElementById('finalTime').textContent = gameState.currentTime.toFixed(2) + 's';
+    if (rustGame.is_completed()) {
+        document.getElementById('finalTime').textContent = rustGame.get_current_time().toFixed(2) + 's';
         document.getElementById('endScreen').style.display = 'flex';
     }
+
+    // Camera follow
+    const relativeCameraOffset = new THREE.Vector3(0, 5, -10);
+    const cameraOffset = relativeCameraOffset.applyMatrix4(playerMorph.matrixWorld);
+    camera.position.x = cameraOffset.x;
+    camera.position.y = cameraOffset.y;
+    camera.position.z = cameraOffset.z;
+    camera.lookAt(playerMorph.position);
 }
 
 function animate() {

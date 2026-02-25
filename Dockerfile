@@ -1,8 +1,12 @@
 FROM python:3.11
 
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
+    build-essential \
+    pkg-config \
+    libssl-dev \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \
@@ -43,6 +47,12 @@ RUN apt-get update && apt-get install -y \
     apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Rust and wasm-pack
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
